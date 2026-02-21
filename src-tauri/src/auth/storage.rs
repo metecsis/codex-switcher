@@ -5,7 +5,7 @@ use std::path::PathBuf;
 
 use anyhow::{Context, Result};
 
-use crate::types::{AccountsStore, StoredAccount};
+use crate::types::{AccountsStore, LastNotifications, StoredAccount};
 
 /// Get the path to the codex-switcher config directory
 pub fn get_config_dir() -> Result<PathBuf> {
@@ -185,5 +185,20 @@ pub fn update_account_metadata(
     }
 
     save_accounts(&store)?;
+    Ok(())
+}
+
+/// Update last notification timestamps for an account
+pub fn update_last_notifications(
+    account_id: &str,
+    last_notifications: &LastNotifications,
+) -> Result<()> {
+    let mut store = load_accounts()?;
+
+    if let Some(account) = store.accounts.iter_mut().find(|a| a.id == account_id) {
+        account.last_notifications = last_notifications.clone();
+        save_accounts(&store)?;
+    }
+
     Ok(())
 }

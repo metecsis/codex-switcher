@@ -18,7 +18,7 @@ pub struct AccountsStore {
 impl Default for AccountsStore {
     fn default() -> Self {
         Self {
-            version: 1,
+            version: 2,
             accounts: Vec::new(),
             active_account_id: None,
         }
@@ -44,6 +44,47 @@ pub struct StoredAccount {
     pub created_at: DateTime<Utc>,
     /// Last time this account was used
     pub last_used_at: Option<DateTime<Utc>>,
+    /// Notification settings for this account
+    #[serde(default)]
+    pub notification_settings: NotificationSettings,
+    /// Last notification timestamps for cooldown tracking
+    #[serde(default)]
+    pub last_notifications: LastNotifications,
+}
+
+/// Per-account notification settings
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct NotificationSettings {
+    /// Enable/disable all notifications for this account
+    pub enabled: bool,
+    /// Primary rate limit threshold (0-100, None = disabled)
+    pub primary_threshold: Option<u8>,
+    /// Secondary rate limit threshold (0-100, None = disabled)
+    pub secondary_threshold: Option<u8>,
+    /// Credits threshold (0-100, None = disabled)
+    pub credits_threshold: Option<u8>,
+    /// Minimum minutes between notifications for the same threshold
+    pub min_interval_minutes: u8,
+}
+
+impl Default for NotificationSettings {
+    fn default() -> Self {
+        Self {
+            enabled: false,
+            primary_threshold: Some(80),
+            secondary_threshold: Some(80),
+            credits_threshold: Some(20),
+            min_interval_minutes: 60,
+        }
+    }
+}
+
+/// Tracks last notification time per threshold to enforce min_interval
+#[derive(Debug, Clone, Serialize, Deserialize, Default, PartialEq)]
+pub struct LastNotifications {
+    pub primary: Option<DateTime<Utc>>,
+    pub secondary: Option<DateTime<Utc>>,
+    pub credits: Option<DateTime<Utc>>,
 }
 
 impl StoredAccount {
@@ -58,6 +99,8 @@ impl StoredAccount {
             auth_data: AuthData::ApiKey { key: api_key },
             created_at: Utc::now(),
             last_used_at: None,
+            notification_settings: NotificationSettings::default(),
+            last_notifications: LastNotifications::default(),
         }
     }
 
@@ -85,6 +128,8 @@ impl StoredAccount {
             },
             created_at: Utc::now(),
             last_used_at: None,
+            notification_settings: NotificationSettings::default(),
+            last_notifications: LastNotifications::default(),
         }
     }
 }
