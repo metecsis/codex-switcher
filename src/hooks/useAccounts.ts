@@ -1,11 +1,12 @@
 import { useState, useEffect, useCallback } from "react";
-import { invoke } from "@tauri-apps/api/core";
+import { invoke, isTauri } from "@tauri-apps/api/core";
 import type {
   AccountInfo,
   UsageInfo,
   AccountWithUsage,
   WarmupSummary,
   ImportAccountsSummary,
+  NotificationSettings,
 } from "../types";
 
 export function useAccounts() {
@@ -14,6 +15,10 @@ export function useAccounts() {
   const [error, setError] = useState<string | null>(null);
 
   const loadAccounts = useCallback(async (preserveUsage = false) => {
+    if (!isTauri()) {
+      setLoading(false);
+      return;
+    }
     try {
       setLoading(true);
       setError(null);
@@ -227,6 +232,39 @@ export function useAccounts() {
     }
   }, []);
 
+  const getNotificationSettings = useCallback(async (accountId: string) => {
+    try {
+      const settings = await invoke<NotificationSettings>("get_notification_settings", {
+        accountId,
+      });
+      return settings;
+    } catch (err) {
+      console.error("Failed to get notification settings:", err);
+      throw err;
+    }
+  }, []);
+
+  const updateNotificationSettings = useCallback(
+    async (accountId: string, settings: NotificationSettings) => {
+      try {
+        await invoke("update_notification_settings", { accountId, settings });
+      } catch (err) {
+        console.error("Failed to update notification settings:", err);
+        throw err;
+      }
+    },
+    []
+  );
+
+  const resetNotificationHistory = useCallback(async (accountId: string) => {
+    try {
+      await invoke("reset_notification_history", { accountId });
+    } catch (err) {
+      console.error("Failed to reset notification history:", err);
+      throw err;
+    }
+  }, []);
+
   useEffect(() => {
     loadAccounts().then(() => refreshUsage());
     
@@ -258,5 +296,8 @@ export function useAccounts() {
     startOAuthLogin,
     completeOAuthLogin,
     cancelOAuthLogin,
+    getNotificationSettings,
+    updateNotificationSettings,
+    resetNotificationHistory,
   };
 }

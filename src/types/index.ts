@@ -56,3 +56,18 @@ export interface ImportAccountsSummary {
   imported_count: number;
   skipped_count: number;
 }
+
+export interface NotificationSettings {
+  enabled: boolean;
+  primary_threshold: number | null;
+  secondary_threshold: number | null;
+  credits_threshold: number | null;
+  min_interval_minutes: number;
+}
+
+export interface LastNotifications {
+  primary: string | null;
+  secondary: string | null;
+  credits: string | null;
+}
+
