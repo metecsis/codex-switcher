@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
-import { invoke } from "@tauri-apps/api/core";
+import { invoke, isTauri } from "@tauri-apps/api/core";
 import { useAccounts } from "./hooks/useAccounts";
-import { AccountCard, AddAccountModal } from "./components";
+import { AccountCard, AddAccountModal, ThemeToggle } from "./components";
 import type { CodexProcessInfo } from "./types";
 import "./App.css";
 
@@ -19,6 +19,9 @@ function App() {
     startOAuthLogin,
     completeOAuthLogin,
     cancelOAuthLogin,
+    getNotificationSettings,
+    updateNotificationSettings,
+    resetNotificationHistory,
   } = useAccounts();
 
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
@@ -42,6 +45,9 @@ function App() {
   };
 
   const checkProcesses = useCallback(async () => {
+    if (!isTauri()) {
+      return;
+    }
     try {
       const info = await invoke<CodexProcessInfo>("check_codex_processes");
       setProcessInfo(info);
@@ -106,32 +112,34 @@ function App() {
   const hasRunningProcesses = processInfo && processInfo.count > 0;
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       {/* Header */}
-      <header className="sticky top-0 z-40 bg-white border-b border-gray-200">
+      <header className="sticky top-0 z-40 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
         <div className="max-w-5xl mx-auto px-6 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="h-10 w-10 rounded-xl bg-gray-900 flex items-center justify-center text-white font-bold text-lg">
+              <div className="h-10 w-10 rounded-xl bg-gray-900 dark:bg-gray-100 flex items-center justify-center text-white dark:text-gray-900 font-bold text-lg">
                 C
               </div>
               <div>
-                <h1 className="text-xl font-bold text-gray-900 tracking-tight">
+                <h1 className="text-xl font-bold text-gray-900 dark:text-gray-100 tracking-tight">
                   Codex Switcher
                 </h1>
-                <p className="text-xs text-gray-500">
+                <p className="text-xs text-gray-500 dark:text-gray-400">
                   Multi-account manager for Codex CLI
                 </p>
               </div>
             </div>
             <div className="flex items-center gap-3">
+              {/* Theme Toggle */}
+              <ThemeToggle />
               {/* Process Status Indicator */}
               {processInfo && (
                 <div
                   className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm ${
                     hasRunningProcesses
-                      ? "bg-amber-50 text-amber-700 border border-amber-200"
-                      : "bg-green-50 text-green-700 border border-green-200"
+                      ? "bg-amber-50 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-700"
+                      : "bg-green-50 dark:bg-green-900/30 text-green-700 dark:text-green-300 border border-green-200 dark:border-green-700"
                   }`}
                 >
                   <span
@@ -147,7 +155,7 @@ function App() {
               <button
                 onClick={handleRefresh}
                 disabled={isRefreshing}
-                className="px-4 py-2 text-sm font-medium rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-700 transition-colors disabled:opacity-50"
+                className="px-4 py-2 text-sm font-medium rounded-lg bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 transition-colors disabled:opacity-50"
               >
                 {isRefreshing ? (
                   <span className="flex items-center gap-2">
@@ -159,7 +167,7 @@ function App() {
               </button>
               <button
                 onClick={() => setIsAddModalOpen(true)}
-                className="px-4 py-2 text-sm font-medium rounded-lg bg-gray-900 hover:bg-gray-800 text-white transition-colors"
+                className="px-4 py-2 text-sm font-medium rounded-lg bg-gray-900 dark:bg-gray-100 hover:bg-gray-800 dark:hover:bg-white text-white dark:text-gray-900 transition-colors"
               >
                 + Add Account
               </button>
@@ -172,28 +180,28 @@ function App() {
       <main className="max-w-5xl mx-auto px-6 py-8">
         {loading && accounts.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-20">
-            <div className="animate-spin h-10 w-10 border-2 border-gray-900 border-t-transparent rounded-full mb-4"></div>
-            <p className="text-gray-500">Loading accounts...</p>
+            <div className="animate-spin h-10 w-10 border-2 border-gray-900 dark:border-gray-100 border-t-transparent dark:border-t-transparent rounded-full mb-4"></div>
+            <p className="text-gray-500 dark:text-gray-400">Loading accounts...</p>
           </div>
         ) : error ? (
           <div className="text-center py-20">
-            <div className="text-red-600 mb-2">Failed to load accounts</div>
-            <p className="text-sm text-gray-500">{error}</p>
+            <div className="text-red-600 dark:text-red-400 mb-2">Failed to load accounts</div>
+            <p className="text-sm text-gray-500 dark:text-gray-400">{error}</p>
           </div>
         ) : accounts.length === 0 ? (
           <div className="text-center py-20">
-            <div className="h-16 w-16 rounded-2xl bg-gray-100 flex items-center justify-center mx-auto mb-4">
+            <div className="h-16 w-16 rounded-2xl bg-gray-100 dark:bg-gray-800 flex items-center justify-center mx-auto mb-4">
               <span className="text-3xl">👤</span>
             </div>
-            <h2 className="text-xl font-semibold text-gray-900 mb-2">
+            <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-2">
               No accounts yet
             </h2>
-            <p className="text-gray-500 mb-6">
+            <p className="text-gray-500 dark:text-gray-400 mb-6">
               Add your first Codex account to get started
             </p>
             <button
               onClick={() => setIsAddModalOpen(true)}
-              className="px-6 py-3 text-sm font-medium rounded-lg bg-gray-900 hover:bg-gray-800 text-white transition-colors"
+              className="px-6 py-3 text-sm font-medium rounded-lg bg-gray-900 dark:bg-gray-100 hover:bg-gray-800 dark:hover:bg-white text-white dark:text-gray-900 transition-colors"
             >
               Add Account
             </button>
@@ -203,7 +211,7 @@ function App() {
             {/* Active Account */}
             {activeAccount && (
               <section>
-                <h2 className="text-sm font-medium text-gray-500 uppercase tracking-wider mb-4">
+                <h2 className="text-sm font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-4">
                   Active Account
                 </h2>
                 <AccountCard
@@ -216,6 +224,9 @@ function App() {
                   switchDisabled={hasRunningProcesses ?? false}
                   masked={maskedAccounts.has(activeAccount.id)}
                   onToggleMask={() => toggleMask(activeAccount.id)}
+                  onGetNotificationSettings={getNotificationSettings}
+                  onUpdateNotificationSettings={updateNotificationSettings}
+                  onResetNotificationHistory={resetNotificationHistory}
                 />
               </section>
             )}
@@ -223,7 +234,7 @@ function App() {
             {/* Other Accounts */}
             {otherAccounts.length > 0 && (
               <section>
-                <h2 className="text-sm font-medium text-gray-500 uppercase tracking-wider mb-4">
+                <h2 className="text-sm font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-4">
                   Other Accounts ({otherAccounts.length})
                 </h2>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -239,6 +250,9 @@ function App() {
                       switchDisabled={hasRunningProcesses ?? false}
                       masked={maskedAccounts.has(account.id)}
                       onToggleMask={() => toggleMask(account.id)}
+                      onGetNotificationSettings={getNotificationSettings}
+                      onUpdateNotificationSettings={updateNotificationSettings}
+                      onResetNotificationHistory={resetNotificationHistory}
                     />
                   ))}
                 </div>
@@ -250,14 +264,14 @@ function App() {
 
       {/* Refresh Success Toast */}
       {refreshSuccess && (
-        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 px-4 py-3 bg-green-600 text-white rounded-lg shadow-lg text-sm flex items-center gap-2">
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 px-4 py-3 bg-green-600 dark:bg-green-700 text-white rounded-lg shadow-lg dark:shadow-black/50 text-sm flex items-center gap-2">
           <span>✓</span> Usage refreshed successfully
         </div>
       )}
 
       {/* Delete Confirmation Toast */}
       {deleteConfirmId && (
-        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 px-4 py-3 bg-red-600 text-white rounded-lg shadow-lg text-sm">
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 px-4 py-3 bg-red-600 dark:bg-red-700 text-white rounded-lg shadow-lg dark:shadow-black/50 text-sm">
           Click delete again to confirm removal
         </div>
       )}

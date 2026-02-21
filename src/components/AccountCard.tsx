@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from "react";
-import type { AccountWithUsage } from "../types";
+import type { AccountWithUsage, NotificationSettings as NotificationSettingsType } from "../types";
+import { NotificationSettings } from "./NotificationSettings";
 import { UsageBar } from "./UsageBar";
 
 interface AccountCardProps {
@@ -12,6 +13,12 @@ interface AccountCardProps {
   switchDisabled?: boolean;
   masked?: boolean;
   onToggleMask?: () => void;
+  onGetNotificationSettings?: (accountId: string) => Promise<NotificationSettingsType>;
+  onUpdateNotificationSettings?: (
+    accountId: string,
+    settings: NotificationSettingsType
+  ) => Promise<void>;
+  onResetNotificationHistory?: (accountId: string) => Promise<void>;
 }
 
 function formatLastRefresh(date: Date | null): string {
@@ -46,6 +53,9 @@ export function AccountCard({
   switchDisabled,
   masked = false,
   onToggleMask,
+  onGetNotificationSettings,
+  onUpdateNotificationSettings,
+  onResetNotificationHistory,
 }: AccountCardProps) {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [lastRefresh, setLastRefresh] = useState<Date | null>(
@@ -102,12 +112,12 @@ export function AccountCard({
       : "Unknown";
 
   const planColors: Record<string, string> = {
-    pro: "bg-indigo-50 text-indigo-700 border-indigo-200",
-    plus: "bg-emerald-50 text-emerald-700 border-emerald-200",
-    team: "bg-blue-50 text-blue-700 border-blue-200",
-    enterprise: "bg-amber-50 text-amber-700 border-amber-200",
-    free: "bg-gray-50 text-gray-600 border-gray-200",
-    api_key: "bg-orange-50 text-orange-700 border-orange-200",
+    pro: "bg-indigo-50 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 border-indigo-200 dark:border-indigo-700",
+    plus: "bg-emerald-50 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-700",
+    team: "bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-700",
+    enterprise: "bg-amber-50 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-700",
+    free: "bg-gray-50 dark:bg-gray-800 text-gray-600 dark:text-gray-400 border-gray-200 dark:border-gray-700",
+    api_key: "bg-orange-50 dark:bg-orange-900/30 text-orange-700 dark:text-orange-300 border-orange-200 dark:border-orange-700",
   };
 
   const planKey = account.plan_type?.toLowerCase() || "api_key";
@@ -118,8 +128,8 @@ export function AccountCard({
     <div
       className={`relative rounded-xl border p-5 transition-all duration-200 ${
         account.is_active
-          ? "bg-white border-emerald-400 shadow-sm"
-          : "bg-white border-gray-200 hover:border-gray-300"
+          ? "bg-white dark:bg-gray-800 border-emerald-400 dark:border-emerald-600 shadow-sm"
+          : "bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600"
       }`}
     >
       {/* Header */}
@@ -140,11 +150,11 @@ export function AccountCard({
                 onChange={(e) => setEditName(e.target.value)}
                 onBlur={handleRename}
                 onKeyDown={handleKeyDown}
-                className="font-semibold text-gray-900 bg-gray-100 px-2 py-0.5 rounded border border-gray-300 focus:outline-none focus:border-gray-500 w-full"
+                className="font-semibold text-gray-900 dark:text-gray-100 bg-gray-100 dark:bg-gray-700 px-2 py-0.5 rounded border border-gray-300 dark:border-gray-600 focus:outline-none focus:border-gray-500 dark:focus:border-gray-400 w-full"
               />
             ) : (
               <h3
-                className="font-semibold text-gray-900 truncate cursor-pointer hover:text-gray-600"
+                className="font-semibold text-gray-900 dark:text-gray-100 truncate cursor-pointer hover:text-gray-600 dark:hover:text-gray-300"
                 onClick={() => !masked && setIsEditing(true)}
                 title={masked ? undefined : "Click to rename"}
               >
@@ -153,7 +163,7 @@ export function AccountCard({
             )}
           </div>
           {account.email && (
-            <p className="text-sm text-gray-500 truncate">
+            <p className="text-sm text-gray-500 dark:text-gray-400 truncate">
               <BlurredText blur={masked}>{account.email}</BlurredText>
             </p>
           )}
@@ -164,7 +174,7 @@ export function AccountCard({
           {onToggleMask && (
             <button
               onClick={onToggleMask}
-              className="p-1 text-gray-400 hover:text-gray-600 transition-colors"
+              className="p-1 text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
               title={masked ? "Show info" : "Hide info"}
             >
               {masked ? (
@@ -194,7 +204,7 @@ export function AccountCard({
       </div>
 
       {/* Last refresh time */}
-      <div className="text-xs text-gray-400 mb-3">
+      <div className="text-xs text-gray-400 dark:text-gray-500 mb-3">
         Last updated: {formatLastRefresh(lastRefresh)}
       </div>
 
@@ -203,7 +213,7 @@ export function AccountCard({
         {account.is_active ? (
           <button
             disabled
-            className="flex-1 px-4 py-2 text-sm font-medium rounded-lg bg-gray-100 text-gray-500 border border-gray-200 cursor-default"
+            className="flex-1 px-4 py-2 text-sm font-medium rounded-lg bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400 border border-gray-200 dark:border-gray-600 cursor-default"
           >
             ✓ Active
           </button>
@@ -213,8 +223,8 @@ export function AccountCard({
             disabled={switching || switchDisabled}
             className={`flex-1 px-4 py-2 text-sm font-medium rounded-lg transition-colors disabled:opacity-50 ${
               switchDisabled
-                ? "bg-gray-200 text-gray-400 cursor-not-allowed"
-                : "bg-gray-900 hover:bg-gray-800 text-white"
+                ? "bg-gray-200 dark:bg-gray-700 text-gray-400 dark:text-gray-500 cursor-not-allowed"
+                : "bg-gray-900 dark:bg-gray-100 hover:bg-gray-800 dark:hover:bg-white text-white dark:text-gray-900"
             }`}
             title={switchDisabled ? "Close all Codex processes first" : undefined}
           >
@@ -226,16 +236,26 @@ export function AccountCard({
           disabled={isRefreshing}
           className={`px-3 py-2 text-sm rounded-lg transition-colors ${
             isRefreshing
-              ? "bg-gray-200 text-gray-400"
-              : "bg-gray-100 hover:bg-gray-200 text-gray-600"
+              ? "bg-gray-200 dark:bg-gray-700 text-gray-400 dark:text-gray-500"
+              : "bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-600 dark:text-gray-300"
           }`}
           title="Refresh usage"
         >
           <span className={isRefreshing ? "animate-spin inline-block" : ""}>↻</span>
         </button>
+        {/* Notification Settings */}
+        {onGetNotificationSettings && onUpdateNotificationSettings && onResetNotificationHistory && (
+          <NotificationSettings
+            accountId={account.id}
+            accountName={account.name}
+            onGetSettings={onGetNotificationSettings}
+            onUpdateSettings={onUpdateNotificationSettings}
+            onResetHistory={onResetNotificationHistory}
+          />
+        )}
         <button
           onClick={onDelete}
-          className="px-3 py-2 text-sm rounded-lg bg-red-50 hover:bg-red-100 text-red-600 transition-colors"
+          className="px-3 py-2 text-sm rounded-lg bg-red-50 dark:bg-red-900/30 hover:bg-red-100 dark:hover:bg-red-900/50 text-red-600 dark:text-red-400 transition-colors"
           title="Remove account"
         >
           ✕
