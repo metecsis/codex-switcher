@@ -1,1 +1,23 @@
 @import "tailwindcss";
+
+/* Enable dark mode with class strategy */
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* Custom dark mode variables */
+:root {
+  color-scheme: light dark;
+}
+
+/* Smooth transitions for theme changes - applied to common elements */
+body,
+body * {
+    transition-property: background-color, border-color, color;
+    transition-duration: 150ms;
+    transition-timing-function: ease-in-out;
+}
+
+/* Disable transitions on page load */
+.no-transition,
+.no-transition * {
+    transition: none !important;
+}

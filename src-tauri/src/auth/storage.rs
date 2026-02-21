@@ -5,7 +5,6 @@ use std::path::PathBuf;
 
 use anyhow::{Context, Result};
 
-<<<<<<< HEAD
 use crate::types::{AccountsStore, AuthData, LastNotifications, StoredAccount};
 
 /// Get the path to the codex-switcher config directory

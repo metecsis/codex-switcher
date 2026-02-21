@@ -64,7 +64,7 @@ function RateLimitBar({
 
   return (
     <div className="space-y-1">
-      <div className="flex justify-between text-xs text-gray-500">
+      <div className="flex justify-between text-xs text-gray-500 dark:text-gray-400">
         <span>{label} {windowLabel && `(${windowLabel})`}</span>
         <span>
           {remainingPercent.toFixed(0)}% left
@@ -72,7 +72,7 @@ function RateLimitBar({
           {resetLabel && exactResetLabel && ` (${exactResetLabel})`}
         </span>
       </div>
-      <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
+      <div className="h-1.5 bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden">
         <div
           className={`h-full transition-all duration-300 ${colorClass}`}
           style={{ width: `${Math.min(remainingPercent, 100)}%` }}
@@ -86,11 +86,11 @@ export function UsageBar({ usage, loading }: UsageBarProps) {
   if (loading) {
     return (
       <div className="space-y-2">
-        <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden animate-pulse">
-          <div className="h-full w-2/3 bg-gray-200"></div>
+        <div className="h-1.5 bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden animate-pulse">
+          <div className="h-full w-2/3 bg-gray-200 dark:bg-gray-600"></div>
         </div>
-        <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden animate-pulse">
-          <div className="h-full w-1/2 bg-gray-200"></div>
+        <div className="h-1.5 bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden animate-pulse">
+          <div className="h-full w-1/2 bg-gray-200 dark:bg-gray-600"></div>
         </div>
       </div>
     );
@@ -98,7 +98,7 @@ export function UsageBar({ usage, loading }: UsageBarProps) {
 
   if (!usage || usage.error) {
     return (
-      <div className="text-xs text-gray-400 italic py-1">
+      <div className="text-xs text-gray-400 dark:text-gray-500 italic py-1">
         {usage?.error || "Usage unavailable"}
       </div>
     );
@@ -109,7 +109,7 @@ export function UsageBar({ usage, loading }: UsageBarProps) {
 
   if (!hasPrimary && !hasSecondary) {
     return (
-      <div className="text-xs text-gray-400 italic py-1">
+      <div className="text-xs text-gray-400 dark:text-gray-500 italic py-1">
         No rate limit data
       </div>
     );
@@ -134,7 +134,7 @@ export function UsageBar({ usage, loading }: UsageBarProps) {
         />
       )}
       {usage.credits_balance && (
-        <div className="text-xs text-gray-500">
+        <div className="text-xs text-gray-500 dark:text-gray-400">
           Credits: {usage.credits_balance}
         </div>
       )}

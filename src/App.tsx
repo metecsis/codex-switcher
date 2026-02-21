@@ -1,8 +1,8 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from "react";
-import { invoke } from "@tauri-apps/api/core";
+import { invoke, isTauri } from "@tauri-apps/api/core";
 import { open, save } from "@tauri-apps/plugin-dialog";
 import { useAccounts } from "./hooks/useAccounts";
-import { AccountCard, AddAccountModal } from "./components";
+import { AccountCard, AddAccountModal, ThemeToggle } from "./components";
 import type { CodexProcessInfo } from "./types";
 import "./App.css";
 
@@ -26,6 +26,9 @@ function App() {
     startOAuthLogin,
     completeOAuthLogin,
     cancelOAuthLogin,
+    getNotificationSettings,
+    updateNotificationSettings,
+    resetNotificationHistory,
   } = useAccounts();
 
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
@@ -84,6 +87,9 @@ function App() {
   };
 
   const checkProcesses = useCallback(async () => {
+    if (!isTauri()) {
+      return;
+    }
     try {
       const info = await invoke<CodexProcessInfo>("check_codex_processes");
       setProcessInfo(info);
@@ -362,30 +368,32 @@ function App() {
   }, [otherAccounts, otherAccountsSort]);
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       {/* Header */}
-      <header className="sticky top-0 z-40 bg-white border-b border-gray-200">
+      <header className="sticky top-0 z-40 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
         <div className="max-w-5xl mx-auto px-6 py-4">
           <div className="grid grid-cols-1 gap-3 md:grid-cols-[minmax(0,1fr)_max-content] md:items-center md:gap-4">
             <div className="flex items-center gap-3 min-w-0 flex-1">
-              <div className="h-10 w-10 rounded-xl bg-gray-900 flex items-center justify-center text-white font-bold text-lg">
+              <div className="h-10 w-10 rounded-xl bg-gray-900 dark:bg-gray-100 flex items-center justify-center text-white dark:text-gray-900 font-bold text-lg">
                 C
               </div>
               <div className="min-w-0">
                 <div className="flex items-center gap-2 flex-wrap">
-                  <h1 className="text-xl font-bold text-gray-900 tracking-tight">
+                  <h1 className="text-xl font-bold text-gray-900 dark:text-gray-100 tracking-tight">
                     Codex Switcher
                   </h1>
                   {processInfo && (
                     <span
-                      className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-xs border ${hasRunningProcesses
-                          ? "bg-amber-50 text-amber-700 border-amber-200"
-                          : "bg-green-50 text-green-700 border-green-200"
-                        }`}
+                      className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-xs border ${
+                        hasRunningProcesses
+                          ? "bg-amber-50 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-700"
+                          : "bg-green-50 dark:bg-green-900/30 text-green-700 dark:text-green-300 border-green-200 dark:border-green-700"
+                      }`}
                     >
                       <span
-                        className={`inline-block w-1.5 h-1.5 rounded-full ${hasRunningProcesses ? "bg-amber-500" : "bg-green-500"
-                          }`}
+                        className={`inline-block w-1.5 h-1.5 rounded-full ${
+                          hasRunningProcesses ? "bg-amber-500" : "bg-green-500"
+                        }`}
                       ></span>
                       <span>
                         {hasRunningProcesses
@@ -395,16 +403,17 @@ function App() {
                     </span>
                   )}
                 </div>
-                <p className="text-xs text-gray-500">
+                <p className="text-xs text-gray-500 dark:text-gray-400">
                   Multi-account manager for Codex CLI
                 </p>
               </div>
             </div>
 
             <div className="flex flex-wrap items-center gap-2 shrink-0 md:ml-4 md:w-max md:flex-nowrap md:justify-end">
+              <ThemeToggle />
               <button
                 onClick={toggleMaskAll}
-                className="h-10 px-4 py-2 text-sm font-medium rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-700 transition-colors shrink-0 whitespace-nowrap"
+                className="h-10 px-4 py-2 text-sm font-medium rounded-lg bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 transition-colors shrink-0 whitespace-nowrap"
                 title={allMasked ? "Show all account names and emails" : "Hide all account names and emails"}
               >
                 <span className="flex items-center gap-2">
@@ -429,14 +438,14 @@ function App() {
               <button
                 onClick={handleRefresh}
                 disabled={isRefreshing}
-                className="h-10 px-4 py-2 text-sm font-medium rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-700 transition-colors disabled:opacity-50 shrink-0 whitespace-nowrap"
+                className="h-10 px-4 py-2 text-sm font-medium rounded-lg bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 transition-colors disabled:opacity-50 shrink-0 whitespace-nowrap"
               >
                 {isRefreshing ? "↻ Refreshing..." : "↻ Refresh All"}
               </button>
               <button
                 onClick={handleWarmupAll}
                 disabled={isWarmingAll || accounts.length === 0}
-                className="h-10 px-4 py-2 text-sm font-medium rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-700 transition-colors disabled:opacity-50 shrink-0 whitespace-nowrap"
+                className="h-10 px-4 py-2 text-sm font-medium rounded-lg bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 transition-colors disabled:opacity-50 shrink-0 whitespace-nowrap"
                 title="Send minimal traffic using all accounts"
               >
                 {isWarmingAll ? (
@@ -453,18 +462,18 @@ function App() {
               <div className="relative" ref={actionsMenuRef}>
                 <button
                   onClick={() => setIsActionsMenuOpen((prev) => !prev)}
-                  className="h-10 px-4 py-2 text-sm font-medium rounded-lg bg-gray-900 hover:bg-gray-800 text-white transition-colors shrink-0 whitespace-nowrap"
+                  className="h-10 px-4 py-2 text-sm font-medium rounded-lg bg-gray-900 dark:bg-gray-100 hover:bg-gray-800 dark:hover:bg-white text-white dark:text-gray-900 transition-colors shrink-0 whitespace-nowrap"
                 >
                   Account ▾
                 </button>
                 {isActionsMenuOpen && (
-                  <div className="absolute right-0 mt-2 w-56 rounded-xl border border-gray-200 bg-white shadow-xl p-2 z-50">
+                  <div className="absolute right-0 mt-2 w-56 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-xl p-2 z-50">
                     <button
                       onClick={() => {
                         setIsActionsMenuOpen(false);
                         setIsAddModalOpen(true);
                       }}
-                      className="w-full text-left px-3 py-2 text-sm rounded-lg hover:bg-gray-100 text-gray-700"
+                      className="w-full text-left px-3 py-2 text-sm rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300"
                     >
                       + Add Account
                     </button>
@@ -474,7 +483,7 @@ function App() {
                         void handleExportSlimText();
                       }}
                       disabled={isExportingSlim}
-                      className="w-full text-left px-3 py-2 text-sm rounded-lg hover:bg-gray-100 text-gray-700 disabled:opacity-50"
+                      className="w-full text-left px-3 py-2 text-sm rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 disabled:opacity-50"
                     >
                       {isExportingSlim ? "Exporting..." : "Export Slim Text"}
                     </button>
@@ -484,7 +493,7 @@ function App() {
                         openImportSlimTextModal();
                       }}
                       disabled={isImportingSlim}
-                      className="w-full text-left px-3 py-2 text-sm rounded-lg hover:bg-gray-100 text-gray-700 disabled:opacity-50"
+                      className="w-full text-left px-3 py-2 text-sm rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 disabled:opacity-50"
                     >
                       {isImportingSlim ? "Importing..." : "Import Slim Text"}
                     </button>
@@ -494,7 +503,7 @@ function App() {
                         void handleExportFullFile();
                       }}
                       disabled={isExportingFull}
-                      className="w-full text-left px-3 py-2 text-sm rounded-lg hover:bg-gray-100 text-gray-700 disabled:opacity-50"
+                      className="w-full text-left px-3 py-2 text-sm rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 disabled:opacity-50"
                     >
                       {isExportingFull ? "Exporting..." : "Export Full Encrypted File"}
                     </button>
@@ -504,7 +513,7 @@ function App() {
                         void handleImportFullFile();
                       }}
                       disabled={isImportingFull}
-                      className="w-full text-left px-3 py-2 text-sm rounded-lg hover:bg-gray-100 text-gray-700 disabled:opacity-50"
+                      className="w-full text-left px-3 py-2 text-sm rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 disabled:opacity-50"
                     >
                       {isImportingFull ? "Importing..." : "Import Full Encrypted File"}
                     </button>
@@ -520,28 +529,28 @@ function App() {
       <main className="max-w-5xl mx-auto px-6 py-8">
         {loading && accounts.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-20">
-            <div className="animate-spin h-10 w-10 border-2 border-gray-900 border-t-transparent rounded-full mb-4"></div>
-            <p className="text-gray-500">Loading accounts...</p>
+            <div className="animate-spin h-10 w-10 border-2 border-gray-900 dark:border-gray-100 border-t-transparent dark:border-t-transparent rounded-full mb-4"></div>
+            <p className="text-gray-500 dark:text-gray-400">Loading accounts...</p>
           </div>
         ) : error ? (
           <div className="text-center py-20">
-            <div className="text-red-600 mb-2">Failed to load accounts</div>
-            <p className="text-sm text-gray-500">{error}</p>
+            <div className="text-red-600 dark:text-red-400 mb-2">Failed to load accounts</div>
+            <p className="text-sm text-gray-500 dark:text-gray-400">{error}</p>
           </div>
         ) : accounts.length === 0 ? (
           <div className="text-center py-20">
-            <div className="h-16 w-16 rounded-2xl bg-gray-100 flex items-center justify-center mx-auto mb-4">
+            <div className="h-16 w-16 rounded-2xl bg-gray-100 dark:bg-gray-800 flex items-center justify-center mx-auto mb-4">
               <span className="text-3xl">👤</span>
             </div>
-            <h2 className="text-xl font-semibold text-gray-900 mb-2">
+            <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-2">
               No accounts yet
             </h2>
-            <p className="text-gray-500 mb-6">
+            <p className="text-gray-500 dark:text-gray-400 mb-6">
               Add your first Codex account to get started
             </p>
             <button
               onClick={() => setIsAddModalOpen(true)}
-              className="px-6 py-3 text-sm font-medium rounded-lg bg-gray-900 hover:bg-gray-800 text-white transition-colors"
+              className="px-6 py-3 text-sm font-medium rounded-lg bg-gray-900 dark:bg-gray-100 hover:bg-gray-800 dark:hover:bg-white text-white dark:text-gray-900 transition-colors"
             >
               Add Account
             </button>
@@ -551,7 +560,7 @@ function App() {
             {/* Active Account */}
             {activeAccount && (
               <section>
-                <h2 className="text-sm font-medium text-gray-500 uppercase tracking-wider mb-4">
+                <h2 className="text-sm font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-4">
                   Active Account
                 </h2>
                 <AccountCard
@@ -568,6 +577,9 @@ function App() {
                   warmingUp={isWarmingAll || warmingUpId === activeAccount.id}
                   masked={maskedAccounts.has(activeAccount.id)}
                   onToggleMask={() => toggleMask(activeAccount.id)}
+                  onGetNotificationSettings={getNotificationSettings}
+                  onUpdateNotificationSettings={updateNotificationSettings}
+                  onResetNotificationHistory={resetNotificationHistory}
                 />
               </section>
             )}
@@ -576,11 +588,11 @@ function App() {
             {otherAccounts.length > 0 && (
               <section>
                 <div className="flex items-center justify-between gap-3 mb-4">
-                  <h2 className="text-sm font-medium text-gray-500 uppercase tracking-wider">
+                  <h2 className="text-sm font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                     Other Accounts ({otherAccounts.length})
                   </h2>
                   <div className="flex items-center gap-2">
-                    <label htmlFor="other-accounts-sort" className="text-xs text-gray-500">
+                    <label htmlFor="other-accounts-sort" className="text-xs text-gray-500 dark:text-gray-400">
                       Sort
                     </label>
                     <div className="relative">
@@ -596,7 +608,7 @@ function App() {
                               | "remaining_asc"
                           )
                         }
-                        className="appearance-none font-sans text-xs sm:text-sm font-medium pl-3 pr-9 py-2 rounded-xl border border-gray-300 bg-gradient-to-b from-white to-gray-50 text-gray-700 shadow-sm hover:border-gray-400 hover:shadow focus:outline-none focus:ring-2 focus:ring-gray-300 focus:border-gray-400 transition-all"
+                        className="appearance-none font-sans text-xs sm:text-sm font-medium pl-3 pr-9 py-2 rounded-xl border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 shadow-sm hover:border-gray-400 dark:hover:border-gray-500 hover:shadow focus:outline-none focus:ring-2 focus:ring-gray-300 dark:focus:ring-gray-600 focus:border-gray-400 dark:focus:border-gray-500 transition-all"
                       >
                         <option value="deadline_asc">Reset: earliest to latest</option>
                         <option value="deadline_desc">Reset: latest to earliest</option>
@@ -607,7 +619,7 @@ function App() {
                           % remaining: lowest to highest
                         </option>
                       </select>
-                      <span className="pointer-events-none absolute inset-y-0 right-3 flex items-center text-gray-500">
+                      <span className="pointer-events-none absolute inset-y-0 right-3 flex items-center text-gray-500 dark:text-gray-400">
                         <svg
                           className="h-4 w-4"
                           viewBox="0 0 20 20"
@@ -636,6 +648,9 @@ function App() {
                       warmingUp={isWarmingAll || warmingUpId === account.id}
                       masked={maskedAccounts.has(account.id)}
                       onToggleMask={() => toggleMask(account.id)}
+                      onGetNotificationSettings={getNotificationSettings}
+                      onUpdateNotificationSettings={updateNotificationSettings}
+                      onResetNotificationHistory={resetNotificationHistory}
                     />
                   ))}
                 </div>
@@ -647,7 +662,7 @@ function App() {
 
       {/* Refresh Success Toast */}
       {refreshSuccess && (
-        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 px-4 py-3 bg-green-600 text-white rounded-lg shadow-lg text-sm flex items-center gap-2">
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 px-4 py-3 bg-green-600 dark:bg-green-700 text-white rounded-lg shadow-lg dark:shadow-black/50 text-sm flex items-center gap-2">
           <span>✓</span> Usage refreshed successfully
         </div>
       )}
@@ -655,10 +670,10 @@ function App() {
       {/* Warm-up Toast */}
       {warmupToast && (
         <div
-          className={`fixed bottom-20 left-1/2 -translate-x-1/2 px-4 py-3 rounded-lg shadow-lg text-sm ${
+          className={`fixed bottom-20 left-1/2 -translate-x-1/2 px-4 py-3 rounded-lg shadow-lg dark:shadow-black/50 text-sm ${
             warmupToast.isError
-              ? "bg-red-600 text-white"
-              : "bg-amber-100 text-amber-900 border border-amber-300"
+              ? "bg-red-600 dark:bg-red-700 text-white"
+              : "bg-amber-100 dark:bg-amber-900/30 text-amber-900 dark:text-amber-300 border border-amber-300 dark:border-amber-700"
           }`}
         >
           {warmupToast.message}
@@ -667,7 +682,7 @@ function App() {
 
       {/* Delete Confirmation Toast */}
       {deleteConfirmId && (
-        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 px-4 py-3 bg-red-600 text-white rounded-lg shadow-lg text-sm">
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 px-4 py-3 bg-red-600 dark:bg-red-700 text-white rounded-lg shadow-lg dark:shadow-black/50 text-sm">
           Click delete again to confirm removal
         </div>
       )}
@@ -684,26 +699,26 @@ function App() {
 
       {/* Import/Export Config Modal */}
       {isConfigModalOpen && (
-        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
-          <div className="bg-white border border-gray-200 rounded-2xl w-full max-w-2xl mx-4 shadow-xl">
-            <div className="flex items-center justify-between p-5 border-b border-gray-100">
-              <h2 className="text-lg font-semibold text-gray-900">
+        <div className="fixed inset-0 bg-black/40 dark:bg-black/60 flex items-center justify-center z-50">
+          <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl w-full max-w-2xl mx-4 shadow-xl dark:shadow-black/50">
+            <div className="flex items-center justify-between p-5 border-b border-gray-100 dark:border-gray-700">
+              <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
                 {configModalMode === "slim_export" ? "Export Slim Text" : "Import Slim Text"}
               </h2>
               <button
                 onClick={() => setIsConfigModalOpen(false)}
-                className="text-gray-400 hover:text-gray-600 transition-colors"
+                className="text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
               >
                 ✕
               </button>
             </div>
             <div className="p-5 space-y-4">
               {configModalMode === "slim_import" ? (
-                <p className="text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
+                <p className="text-sm text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-900/30 border border-amber-200 dark:border-amber-700 rounded-lg px-3 py-2">
                   Existing accounts are kept. Only missing accounts are imported.
                 </p>
               ) : (
-                <p className="text-sm text-gray-500">
+                <p className="text-sm text-gray-500 dark:text-gray-400">
                   This slim string contains account secrets. Keep it private.
                 </p>
               )}
@@ -718,18 +733,18 @@ function App() {
                       : "Export string will appear here"
                     : "Paste config string here"
                 }
-                className="w-full h-48 px-4 py-3 bg-gray-50 border border-gray-200 rounded-lg text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:border-gray-400 focus:ring-1 focus:ring-gray-400 font-mono"
+                className="w-full h-48 px-4 py-3 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-sm text-gray-800 dark:text-gray-200 placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:border-gray-400 dark:focus:border-gray-500 focus:ring-1 focus:ring-gray-400 dark:focus:ring-gray-500 font-mono"
               />
               {configModalError && (
-                <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-red-600 text-sm">
+                <div className="p-3 bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-700 rounded-lg text-red-600 dark:text-red-400 text-sm">
                   {configModalError}
                 </div>
               )}
             </div>
-            <div className="flex gap-3 p-5 border-t border-gray-100">
+            <div className="flex gap-3 p-5 border-t border-gray-100 dark:border-gray-700">
               <button
                 onClick={() => setIsConfigModalOpen(false)}
-                className="px-4 py-2.5 text-sm font-medium rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-700 transition-colors"
+                className="px-4 py-2.5 text-sm font-medium rounded-lg bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 transition-colors"
               >
                 Close
               </button>
@@ -746,7 +761,7 @@ function App() {
                     }
                   }}
                   disabled={!configPayload || isExportingSlim}
-                  className="px-4 py-2.5 text-sm font-medium rounded-lg bg-gray-900 hover:bg-gray-800 text-white transition-colors disabled:opacity-50"
+                  className="px-4 py-2.5 text-sm font-medium rounded-lg bg-gray-900 dark:bg-gray-100 hover:bg-gray-800 dark:hover:bg-white text-white dark:text-gray-900 transition-colors disabled:opacity-50"
                 >
                   {configCopied ? "Copied" : "Copy String"}
                 </button>
@@ -754,7 +769,7 @@ function App() {
                 <button
                   onClick={handleImportSlimText}
                   disabled={isImportingSlim}
-                  className="px-4 py-2.5 text-sm font-medium rounded-lg bg-gray-900 hover:bg-gray-800 text-white transition-colors disabled:opacity-50"
+                  className="px-4 py-2.5 text-sm font-medium rounded-lg bg-gray-900 dark:bg-gray-100 hover:bg-gray-800 dark:hover:bg-white text-white dark:text-gray-900 transition-colors disabled:opacity-50"
                 >
                   {isImportingSlim ? "Importing..." : "Import Missing Accounts"}
                 </button>
